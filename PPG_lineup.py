@@ -16,16 +16,55 @@ class Player:
 	def __init__(self, name, position, salary, team, PPG):
 		self.name = name
 		self.position = position
-		self.salary = salary
+		self.salary = int(salary)
 		self.team = team
-		self.PPG = PPG
-		self.value = self.PPG/(salary/1000) 
+		self.PPG = float(PPG)
+		self.value = float(self.PPG)/(float(salary)/1000) 
 	def printPlayer(self): 
 		print(self.name, self.position, self.team, self.salary, self.PPG)
 		
-def createLineup(qb_list, rb_list, wr_list, te_list, flex_list, dst_list): 
+def createStarterLineup(qb_list, rb_list, wr_list, te_list, flex_list, dst_list): 
+	#algorithm is to make the higehst PPG lineup and then examine each replacement 
+	#at each role choosing the smallest decrease in salary as the actual change
+	
+	#0   1    2    3    4    5    6   7     9
+	#QB, RB1, RB2, WR1, WR2, WR3, TE, FLEX, DST
 	lineup = []
-	#choose QB, starting with the best PPG per dollar
+	salary = 50000
+	positions_used = []
+	
+	#create stacked lineup
+	lineup.append(qb_list[0])
+	positions_used.append("QB")
+	
+	for i in range(2): 
+		tmp = rb_list[i]
+		lineup.append(tmp)
+		positions_used.append("RB")
+	for i in range(3): 
+		tmp = wr_list[i]
+		lineup.append(tmp)
+		positions_used.append("WR")
+	
+	lineup.append(te_list[0])
+	positions_used.append("TE")
+	
+	for i in range(len(flex_list)): 
+		if flex_list[i] not in lineup: 
+			lineup.append(flex_list[i])
+			positions_used.append("FLEX")
+			break
+	
+	lineup.append(dst_list[0])
+	positions_used.append("DST")
+	
+	return lineup
+
+def computeSalary(lineup): 
+	sal = 0
+	for player in lineup:
+		sal += player.salary
+	return sal
 	
 def scoreLineup(lineup): 
 	score = 0
@@ -35,13 +74,15 @@ def scoreLineup(lineup):
 	
 def sortByValue(elem): 
 	return elem.value
+def sortByPPG(elem): 
+	return elem.PPG
 	
 with open('DKSalaries10_11_19.csv') as csv_file: 
 	csv_reader = csv.reader(csv_file, delimiter=",")
 	line_count = 0
 	for row in csv_reader: 
 		if line_count == 0: 
-			print(f'Column names are {", ".join(row)}')
+			#print(f'Column names are {", ".join(row)}')
 			line_count += 1
 		else:
 			if row[0] == "DST": 
@@ -67,14 +108,15 @@ with open('DKSalaries10_11_19.csv') as csv_file:
 	
 #sort list by PPG and create lineup
 player_list.sort(key=lambda elem: (elem.position, elem.value), reverse=True)
-qb_list.sort(key=sortByValue, reverse=True)
-rb_list.sort(key=sortByValue, reverse=True)
-wr_list.sort(key=sortByValue, reverse=True)
-te_list.sort(key=sortByValue, reverse=True)
-flex_list.sort(key=sortByValue, reverse=True)
-dst_list.sort(key=sortByValue, reverse=True)
+qb_list.sort(key=sortByPPG, reverse=True)
+rb_list.sort(key=sortByPPG, reverse=True)
+wr_list.sort(key=sortByPPG, reverse=True)
+te_list.sort(key=sortByPPG, reverse=True)
+flex_list.sort(key=sortByPPG, reverse=True)
+dst_list.sort(key=sortByPPG, reverse=True)
 
-for elem in player_list: 
-	elem.printPlayer()
-
-
+lineup = createStarterLineup(qb_list, rb_list, wr_list, te_list, flex_list, dst_list)
+for player in lineup: 
+		player.printPlayer()
+print(scoreLineup(lineup))
+print(computeSalary(lineup))
